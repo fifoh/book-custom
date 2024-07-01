@@ -495,12 +495,12 @@ function setup() {
   
   playButton = createImg('images/play_icon.jpg', '▶');
   playButton.size(45, 45); 
-  playButton.position(10, 15);
+  playButton.position(10, 20);
   playButton.touchStarted(() => toggleAnimation(totalAnimationTime));
 
   stopButton = createImg('images/stop_icon.jpg', '▶');
   stopButton.size(45, 45); 
-  stopButton.position(10, 15);
+  stopButton.position(10, 20);
   stopButton.touchStarted(stopAnimation).hide();
 
   clearButton = createImg('images/bin_icon.jpg', '✖');
@@ -511,12 +511,12 @@ function setup() {
   // hand crank
   handcrankButton = createImg('images/handcrank_off.jpg', 'crank');
   handcrankButton.size(45, 45); 
-  handcrankButton.position(10, 60);
+  handcrankButton.position(10, 65);
   handcrankButton.touchStarted(toggleCrank);
   
   handcrankOffButton = createImg('images/handcrank_on.jpg', 'crank');
   handcrankOffButton.size(45, 45); 
-  handcrankOffButton.position(10, 60);
+  handcrankOffButton.position(10, 65);
   handcrankOffButton.touchStarted(toggleCrank);
   handcrankOffButton.hide(); // Hide initially
   
@@ -653,8 +653,8 @@ function draw() {
     // draw the buttons
     for (let i = 0; i < rows; i++) {
       // draw the clickable instrument buttons
-      let buttonSize = cellHeight * 0.75;
-      let buttonX = -20;
+      let buttonSize = cellHeight * 0.5;
+      let buttonX = -30;
       let buttonY = (rows - 1 - i) * (cellHeight + 5) + cellHeight / 2; // Center the button in the cell's Y-axis
       ellipseButtons.push({ id: i, x: buttonX, y: buttonY, size: buttonSize });
       // Adjust color index using scaleMappings
