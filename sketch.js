@@ -720,7 +720,7 @@ function updateSpeed() {
   let BPM_value = speedSlider.value();
 
   // Calculate new total animation time based on the updated BPM
-  let newTotalAnimationTime = ((60 / BPM_value) * 32) * 1000; // was *16
+  let newTotalAnimationTime = ((60 / BPM_value) * 16) * 1000; // was *16
 
   if (animate) {
     // Calculate the current progress percentage
