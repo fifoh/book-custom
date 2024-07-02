@@ -536,6 +536,7 @@ function setup() {
   scalesDropdown.option('Harmonic Minor');
   scalesDropdown.option('Whole Tone');
   scalesDropdown.option('Octatonic');
+  scalesDropdown.position(windowWidth/2, windowHeight - 25);
 
   // Set a callback function for when an option is selected
   scalesDropdown.changed(changeScale);
