@@ -528,21 +528,23 @@ function setup() {
 // instrument drop down and scales drop down
   // Scale dropdown
   scalesDropdown = createSelect();
+  
+  // Add options
   scalesDropdown.option('Select a Scale:', ''); // This will be the heading
-  scalesDropdown.option('--- Pentatonic ---', 'disabled');
-  scalesDropdown.option('Major');
-  scalesDropdown.option('Minor');
-  scalesDropdown.option('--- Modal ---', 'disabled');
-  scalesDropdown.option('Ionian');
-  scalesDropdown.option('Dorian');
-  scalesDropdown.option('Mixolydian');
-  scalesDropdown.option('Aeolian');
-  scalesDropdown.option('--- Other ---', 'disabled');
+  scalesDropdown.disable('Select a Scale:', '');
+  
+  scalesDropdown.option('Major Pentatonic');
+  scalesDropdown.option('Minor Pentatonic');
+  scalesDropdown.option('Major scale');
+  scalesDropdown.option('Dorian mode');
+  scalesDropdown.option('Mixolydian mode');
+  scalesDropdown.option('Aeolian mode');
   scalesDropdown.option('Chromatic');
   scalesDropdown.option('Harmonic Minor');
   scalesDropdown.option('Whole Tone');
   scalesDropdown.option('Octatonic');
-  scalesDropdown.position(windowWidth/2, windowHeight - 25);
+
+  // Set a callback function for when an option is selected
   scalesDropdown.changed(changeScale);
   
   // Instrument dropdown
@@ -893,22 +895,22 @@ function changeScale() {
   let selectedScale = scalesDropdown.value();
   if (selectedScale !== 'disabled') {
     // Process selected scale
-    if (selectedScale === 'Major') {// pentatonic
+    if (selectedScale === 'Major Pentatonic') {// pentatonic
       scaleMappings = majorPentatonic;
     } 
-    if (selectedScale === 'Minor') {// pentatonic
+    if (selectedScale === 'Minor Pentatonic') {// pentatonic
       scaleMappings = minorPentatonic;
     }     
-    if (selectedScale === 'Ionian') {
+    if (selectedScale === 'Major scale') {
       scaleMappings = ionian;
     }
-    if (selectedScale === 'Dorian') {
+    if (selectedScale === 'Dorian mode') {
       scaleMappings = dorian;
     }
-    if (selectedScale === 'Mixolydian') {
+    if (selectedScale === 'Mixolydian mode') {
       scaleMappings = mixolydian;
     }
-    if (selectedScale === 'Aeolian') {
+    if (selectedScale === 'Aeolian mode') {
       scaleMappings = aeolian;
     }
     if (selectedScale === 'Chromatic') {
