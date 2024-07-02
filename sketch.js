@@ -488,7 +488,7 @@ function setup() {
   
   playButton = createImg('images/play_icon.jpg', '▶');
   playButton.size(45, 45); 
-  playButton.position(10, 20);
+  playButton.position(10, 30);
   playButton.touchStarted(() => toggleAnimation(totalAnimationTime));
 
   stopButton = createImg('images/stop_icon.jpg', '▶');
@@ -506,6 +506,7 @@ function setup() {
   handcrankButton.size(45, 45); 
   handcrankButton.position(10, 65);
   handcrankButton.touchStarted(toggleCrank);
+  handcrankButton.hide();
   
   handcrankOffButton = createImg('images/handcrank_on.jpg', 'crank');
   handcrankOffButton.size(45, 45); 
