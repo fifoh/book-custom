@@ -1,10 +1,3 @@
-// To do:
-// - add buttons for instruments
-// 
-
-// Extras (optional?):
-// - Allow note creation during playback? To more closesly align with other sketches
-
 // clickable buttons for instruments
 let debounceTimer;
 let debounceTimerArray; 
@@ -13,7 +6,7 @@ let ellipseButtons = [];
 let ellipseColors = [
   [255,228,209],   // Red
   [203,237,209],   // Green
-  [187,234,255]    // Blue
+  [167,234,255]    // Blue
 ];
 
 // sample sets
@@ -44,8 +37,8 @@ let checkbox;
 
 let prevSliderValue = 0;
 
-let rows = 10; // initial rows
-const cols = 32; // columns ie note spaces (affects BPM if you change)
+let rows = 6; // initial rows
+const cols = 16; // columns ie note spaces (affects BPM if you change)
 
 let grid = [];
 let gridChanged = true; 
@@ -617,6 +610,10 @@ function clearGrid() {
       grid[i][j] = false;
     }
   }
+  individualInstrumentArray = new Array(37).fill(1);
+  loadAudioSet(individualInstrumentArray);
+  
+  
   gridChanged = true;
 }
 
@@ -674,10 +671,10 @@ function draw() {
 
     // Draw vertical grid lines
     for (let j = 0; j <= cols; j++) {
-      if (j % 8 === 0) {
+      if (j % 4 === 0) {
         strokeWeight(2);
         stroke(0, 0, 0, 50); // thicker and more opaque
-      } else if (j % 2 === 0) {
+      } else if (j % 1 === 0) {
         strokeWeight(1);
         stroke(0, 0, 0, 35); // thinner and more transparent
       } else {
@@ -722,7 +719,7 @@ function updateSpeed() {
   let BPM_value = speedSlider.value();
 
   // Calculate new total animation time based on the updated BPM
-  let newTotalAnimationTime = ((60 / BPM_value) * 16) * 1000;
+  let newTotalAnimationTime = ((60 / BPM_value) * 32) * 1000; // was *16
 
   if (animate) {
     // Calculate the current progress percentage
@@ -823,9 +820,9 @@ function updateSpeedWithSineWave() {
   
   let elapsedTime = (millis() - animationStartTime); // change phase here
   // ie remove /2 for modulation twice as fast
-  let sineValue = Math.sin((elapsedTime / totalAnimationTime) * TWO_PI * (cols / 8));
-  let minBPM = initialBPM_value - 8; // adjust upper range here
-  let maxBPM = initialBPM_value + 8; // and lower range here
+  let sineValue = Math.sin((elapsedTime / totalAnimationTime) * TWO_PI * (cols / 2));
+  let minBPM = initialBPM_value - 16; // adjust upper range here
+  let maxBPM = initialBPM_value + 16; // and lower range here
   let bpmRange = (maxBPM - minBPM) / 2;
   let sineBPM = bpmRange * sineValue + (minBPM + bpmRange);
   speedSlider.value(sineBPM);
