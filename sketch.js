@@ -1,4 +1,4 @@
-// clickable buttons for instruments
+p5.disableFriendlyErrors = true;
 let debounceTimer;
 let debounceTimerArray; 
 let buttonSize = 20;
@@ -9,21 +9,15 @@ let ellipseColors = [
   [167,234,255]    // Blue
 ];
 
-// sample sets
 let loadedInstrumentSetBuffers = {};
 let individualInstrumentArray = new Array(37).fill(1);
-
 let initialBPM_value;
-
 let addButton, removeButton;
 let handcrankButton, handcrankOffButton;
-
 let speedSliderPosition;
 let speedSliderWidth;
-
 let isPlaying;
 let activeSources;
-  
 let rectX;
 let rectY;
 let rectWidth;
@@ -31,18 +25,15 @@ let rectHeight;
 let cellWidth;
 let cellHeight;
 let mainRectPadding;  
-
 let crankEnabled = false;
 let checkbox;
-
 let prevSliderValue = 0;
 
-let rows = 6; // initial rows
-const cols = 16; // columns ie note spaces (affects BPM if you change)
+let rows = 6;
+const cols = 16;
 
 let grid = [];
 let gridChanged = true; 
-
 let pixelsPerMillisecond = 0;
 let animate = false;
 let animationStartTime = 0;
@@ -51,18 +42,15 @@ let playButton;
 let stopButton;
 let clearButton;
 let speedSlider;
-
 let noteDuration = 500;
 let totalAnimationTime = 8000;
 let columnDuration = totalAnimationTime / cols;
 
 // Audio
-// BufferLoader class to handle loading audio files
 let audioBuffers = [];
 let audioContext = new (window.AudioContext || window.webkitAudioContext)();
 let bufferLoader;
 
-// BufferLoader class to handle loading audio files
 function BufferLoader(context, urlList, callback) {
   this.context = context;
   this.urlList = urlList;
@@ -75,9 +63,7 @@ BufferLoader.prototype.loadBuffer = function(url, index) {
   let request = new XMLHttpRequest();
   request.open('GET', url, true);
   request.responseType = 'arraybuffer';
-
   let loader = this;
-
   request.onload = function() {
     loader.context.decodeAudioData(
       request.response,
@@ -96,11 +82,9 @@ BufferLoader.prototype.loadBuffer = function(url, index) {
       }
     );
   };
-
   request.onerror = function() {
     console.error('BufferLoader: XHR error for ' + url);
   };
-
   request.send();
 };
 
@@ -115,15 +99,12 @@ function preload() {
   loadAudioSet(individualInstrumentArray);
 }
 
-// Function to load audio set based on individualInstrumentArray
 function loadAudioSet(individualInstrumentArray) {
   let filePathsToLoad = [];
   let bufferIndicesToLoad = [];
-
   for (let i = 0; i < 37; i++) {
     let setNumber = individualInstrumentArray[i];
     let instrumentSet = '';
-
     if (setNumber === 1) {
       instrumentSet = 'organ';
     } else if (setNumber === 2) {
@@ -134,7 +115,6 @@ function loadAudioSet(individualInstrumentArray) {
       console.error(`Invalid set number ${setNumber} at index ${i}`);
       return;
     }
-
     let filePath = `${instrumentSet}/${i}.mp3`;
     filePathsToLoad.push(filePath);
     bufferIndicesToLoad.push(i);
@@ -171,8 +151,6 @@ function finishedLoading(newBufferList, bufferIndicesToLoad) {
     let filePath = `${instrumentSet}/${bufferIndex}.mp3`;
     loadedInstrumentSetBuffers[filePath] = newBufferList[i];
   }
-
-  // Remove entries from loadedInstrumentSetBuffers that were not loaded in this batch
   if (newBufferList.length > 0) {
     let filePathsLoaded = newBufferList.map((buffer, index) => {
       let bufferIndex = bufferIndicesToLoad[index];
@@ -187,7 +165,6 @@ function finishedLoading(newBufferList, bufferIndicesToLoad) {
       }
       return `${instrumentSet}/${bufferIndex}.mp3`;
     });
-
     for (let filePath in loadedInstrumentSetBuffers) {
       if (!filePathsLoaded.includes(filePath)) {
         delete loadedInstrumentSetBuffers[filePath];
@@ -386,31 +363,23 @@ let octatonic = {
   15: 22
 }
 
-// initial scale mapping (ie the default)
 let scaleMappings = majorPentatonic;
-
 let dragging = false;
 let initialRow = -1;
 let initialCol = -1;
 
-// Touch functions for touch events
 function touchStarted() {
   gridChanged = true;
   if (getAudioContext().state !== 'running') {
     getAudioContext().resume();
   }      
   if (!animate && touches.length > 0) {
-    
     let touchX = touches[0].x;
     let touchY = touches[0].y;    
-    
     let adjustedtouchX = touchX - rectX;
     let adjustedtouchY = touchY - rectY;       
-    
     let touch = touches[0];
-    
     let buttonClicked = false;
-    
     for (let btn of ellipseButtons) {
       let d = dist(adjustedtouchX, adjustedtouchY, btn.x, btn.y);
       if (d < btn.size / 1.8) {
@@ -419,7 +388,6 @@ function touchStarted() {
         gridChanged = true;
       }
     }          
-    
     if (touch.x > rectX && touch.x < rectX + rectWidth && touch.y > rectY && touch.y < rectY + rectHeight) {
       let col = floor((touch.x - rectX) / cellWidth);
       let row = rows - 1 - floor((touch.y - rectY) / (cellHeight + 5));
@@ -442,7 +410,7 @@ function touchEnded() {
   initialRow = -1;
   initialCol = -1;
   gridChanged = true;
-  return true; // To prevent default behavior
+  return true;
 }
 
 function touchMoved() {
@@ -455,14 +423,13 @@ function touchMoved() {
       gridChanged = true;
     }
   }
-  return true; // To prevent default behavior
+  return true;
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   window.addEventListener('resize', resizeCanvasToWindow);
   frameRate(60);  
-  
   rectX = 50;
   rectY = 100;
   rectWidth = windowWidth * 0.8;
@@ -473,7 +440,6 @@ function setup() {
 
   cellWidth = rectWidth / cols;
   cellHeight = (rectHeight - (rows - 1) * 5) / rows;
-
   mainRectPadding = 10;  
   
   graphics = createGraphics(windowWidth, windowHeight);
@@ -481,11 +447,9 @@ function setup() {
   graphics.strokeWeight(2);
   graphics.strokeCap(PROJECT);
   
-  // Draw the play line
   graphics.line(rectX - rectX * 0.15, rectY - rectY * 0.2, rectX - rectX * 0.15, rectHeight + rectHeight * 0.29);  
   
   initializeGridArray();
-  
   playButton = createImg('images/play_icon.jpg', '▶');
   playButton.size(45, 45); 
   playButton.position(10, 30);
@@ -501,32 +465,13 @@ function setup() {
   clearButton.touchStarted(clearGrid);
   clearButton.position(windowWidth - 50, 30);  
   
-  // hand crank
-  handcrankButton = createImg('images/handcrank_off.jpg', 'crank');
-  handcrankButton.size(45, 45); 
-  handcrankButton.position(10, 65);
-  handcrankButton.touchStarted(toggleCrank);
-  handcrankButton.hide();
-  
-  handcrankOffButton = createImg('images/handcrank_on.jpg', 'crank');
-  handcrankOffButton.size(45, 45); 
-  handcrankOffButton.position(10, 65);
-  handcrankOffButton.touchStarted(toggleCrank);
-  handcrankOffButton.hide(); // Hide initially
-  
-  // Add metro symbol
   metroImage = createImg('images/metro_icon.jpg', 'tempo');
   metroImage.size(45, 45);
   metroImage.position(65, 30);  
   
-// instrument drop down and scales drop down
-  // Scale dropdown
   scalesDropdown = createSelect();
-  
-  // Add options
-  scalesDropdown.option('Select a Scale:', ''); // This will be the heading
+  scalesDropdown.option('Select a Scale:', '');
   scalesDropdown.disable('Select a Scale:', '');
-  
   scalesDropdown.option('Major Pentatonic');
   scalesDropdown.option('Minor Pentatonic');
   scalesDropdown.option('Major scale');
@@ -539,10 +484,7 @@ function setup() {
   scalesDropdown.option('Octatonic');
   scalesDropdown.position(windowWidth/2, windowHeight - 25);
 
-  // Set a callback function for when an option is selected
   scalesDropdown.changed(changeScale);
-  
-  // Instrument dropdown
   instrumentDropdown = createSelect();
   instrumentDropdown.option('Select an Instrument:', '');
   instrumentDropdown.option('organ');
@@ -551,24 +493,19 @@ function setup() {
   instrumentDropdown.position(10, windowHeight - 25);
   instrumentDropdown.changed(changeInstrument);  
 
-  // Slider setup
   let sliderWrapper = select('.slider-wrapper');
-  speedSlider = createSlider(40, 240, 100, 1); // Range from 1 to 10, default value 5
+  speedSlider = createSlider(40, 240, 100, 1);
   speedSlider.position(65 + metroImage.width, 40);
   speedSliderPosition = 65 + metroImage.width;
   speedSlider.parent(sliderWrapper);
   speedSlider.style('width', '60px');
   speedSliderWidth = speedSlider.width;
-  speedSlider.input(updateSpeed); // Update speed when slider value changes
-  // Add touch event handling for the slider
+  speedSlider.input(updateSpeed);
   speedSlider.touchStarted(updateSpeed);
   speedSlider.touchMoved(updateSpeed);
   speedSlider.touchEnded(updateSpeed);
   
   updateSpeed();
-  
-  
-  // Create add and remove buttons for ellipses
   addButton = createImg('images/add_row.jpg', '+');
   addButton.size(45, 45);
   addButton.position(windowWidth - 55 - addButton.width, 30);
@@ -593,7 +530,6 @@ function setup() {
     }
   });   
   
-  // Bind touch events
   touchStarted = touchStarted;
   touchEnded = touchEnded;
   touchMoved = touchMoved;
@@ -614,8 +550,6 @@ function clearGrid() {
   }
   individualInstrumentArray = new Array(37).fill(1);
   loadAudioSet(individualInstrumentArray);
-  
-  
   gridChanged = true;
 }
 
@@ -625,7 +559,6 @@ function deleteCells(row, col) {
     grid[row][left] = false;
     left--;
   }
-
   let right = col + 1;
   while (right < cols && grid[row][right]) {
     grid[row][right] = false;
@@ -642,7 +575,6 @@ function draw() {
     fill(255);
     stroke(1, 20);
     rect(-mainRectPadding, -mainRectPadding, rectWidth + 2 * mainRectPadding, rectHeight + 2 * mainRectPadding);
-
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
         noStroke();
@@ -650,47 +582,35 @@ function draw() {
         rect(j * cellWidth, (rows - 1 - i) * (cellHeight + 5), cellWidth, cellHeight);
       }
     }
-    
-    // draw the buttons
     for (let i = 0; i < rows; i++) {
-      // draw the clickable instrument buttons
       let buttonSize = cellHeight * 0.5;
       let buttonX = -30;
-      let buttonY = (rows - 1 - i) * (cellHeight + 5) + cellHeight / 2; // Center the button in the cell's Y-axis
+      let buttonY = (rows - 1 - i) * (cellHeight + 5) + cellHeight / 2;
       ellipseButtons.push({ id: i, x: buttonX, y: buttonY, size: buttonSize });
-      // Adjust color index using scaleMappings
       let originalIndex = scaleMappings[i];
       let colIndex = individualInstrumentArray[originalIndex] - 1;
-
-      fill(ellipseColors[colIndex]); // ellipse color
+      fill(ellipseColors[colIndex]);
       strokeWeight(0);
-
-      // Draw the button (a circle)
       ellipse(buttonX, buttonY, buttonSize, buttonSize);      
     }
-                           
-    
-
-    // Draw vertical grid lines
     for (let j = 0; j <= cols; j++) {
+      // transparency
       if (j % 4 === 0) {
         strokeWeight(2);
-        stroke(0, 0, 0, 50); // thicker and more opaque
+        stroke(0, 0, 0, 50);
       } else if (j % 1 === 0) {
         strokeWeight(1);
-        stroke(0, 0, 0, 35); // thinner and more transparent
+        stroke(0, 0, 0, 35);
       } else {
         continue;
       }
       line(j * cellWidth, 0, j * cellWidth, rectHeight);
     }
-
     translate(-rectX, -rectY);
     gridChanged = false;
-
     image(graphics, 0, 0);
     
-    // BPM value
+    // BPM
     noStroke();
     fill(0);
     text("♩ = " + speedSlider.value(), speedSliderPosition + speedSliderWidth * 1.2, 32);
@@ -720,27 +640,20 @@ function updateSpeed() {
   
   let BPM_value = speedSlider.value();
 
-  // Calculate new total animation time based on the updated BPM
-  let newTotalAnimationTime = ((60 / BPM_value) * 16) * 1000; // was *16
+  let newTotalAnimationTime = ((60 / BPM_value) * 16) * 1000; // change (*16) if changing grid size
 
   if (animate) {
     // Calculate the current progress percentage
     let progress = (millis() - animationStartTime) / totalAnimationTime;
 
-    // Update totalAnimationTime to the new value
     totalAnimationTime = newTotalAnimationTime;
-
-    // Update pixelsPerMillisecond based on the new totalAnimationTime
     pixelsPerMillisecond = (rectX + rectWidth + mainRectPadding) / totalAnimationTime;
 
-    // Calculate the new animationStartTime based on the current progress
     animationStartTime = millis() - (progress * totalAnimationTime);
   } else {
-    // If animation is not running, simply update totalAnimationTime
     totalAnimationTime = newTotalAnimationTime;
   }
 
-  // Recalculate column duration
   columnDuration = totalAnimationTime / cols;
 }
 
@@ -765,12 +678,11 @@ function stopAnimation() {
   isPlaying.fill(false);
   activeSources.forEach(source => source && stopSoundWithFadeOut(source));
   activeSources.fill(null);
-  gridChanged = true; // Set gridChanged to true to force a redraw
+  gridChanged = true; // force redraw
 }
 
 function playColumnSounds(col) {
   if (col < 0 || col >= cols) return;
-
   for (let row = 0; row < rows; row++) {
     if (grid[row][col]) {
       if (!isPlaying[row]) {
@@ -787,7 +699,7 @@ function playColumnSounds(col) {
 }
 
 function playSound(row) {
-  let bufferIndex = scaleMappings[row]; // Assuming the bufferIndex corresponds to the row
+  let bufferIndex = scaleMappings[row];
   playSoundFromBuffer(audioBuffers[bufferIndex], row);
 }
 
@@ -817,49 +729,22 @@ function stopSoundWithFadeOut(activeSource) {
   activeSource.source.stop(audioContext.currentTime + 0.025);
 }
 
-function updateSpeedWithSineWave() {
-  BPM_value = speedSlider.value();
-  
-  let elapsedTime = (millis() - animationStartTime); // change phase here
-  // ie remove /2 for modulation twice as fast
-  let sineValue = Math.sin((elapsedTime / totalAnimationTime) * TWO_PI * (cols / 2));
-  let minBPM = initialBPM_value - 16; // adjust upper range here
-  let maxBPM = initialBPM_value + 16; // and lower range here
-  let bpmRange = (maxBPM - minBPM) / 2;
-  let sineBPM = bpmRange * sineValue + (minBPM + bpmRange);
-  speedSlider.value(sineBPM);
-  updateSpeed();
-}
-
 function resizeCanvasToWindow() {
   resizeCanvas(windowWidth, windowHeight);
-  // createEllipses(); REPLACE
-  
   redraw();
 }
 
 function initializeGridArray() {
-  // Create a new grid with the updated number of rows
   let newGrid = Array(rows).fill().map(() => Array(cols).fill(false));
-
-  // Copy values from the old grid to the new grid
   for (let i = 0; i < Math.min(grid.length, rows); i++) {
     for (let j = 0; j < cols; j++) {
       newGrid[i][j] = grid[i][j];
     }
   }
-
-  // Update the grid with the new grid
   grid = newGrid;
-
-  // Update the cellHeight based on the new number of rows
   cellHeight = (rectHeight - (rows - 1) * 5) / rows;
-
-  // Update isPlaying and activeSources arrays to match the new number of rows
   isPlaying = Array(rows).fill(false);
   activeSources = Array(rows).fill(null);
-
-  // Mark the grid as changed to trigger a redraw
   gridChanged = true;
 }
 
@@ -872,32 +757,27 @@ function disableCrank() {
 }
 
 function toggleCrank() {
-  crankEnabled = !crankEnabled; // Toggle the flag
+  crankEnabled = !crankEnabled;
 
   if (crankEnabled) {
     // Hand crank is enabled
     handcrankButton.hide();
     handcrankOffButton.show();
-    // Call enableCrank function or perform actions when hand crank is enabled
     enableCrank();
   } else {
-    // Hand crank is disabled
     handcrankButton.show();
     handcrankOffButton.hide();
-    // Call disableCrank function or perform actions when hand crank is disabled
     disableCrank();
   }
 }
 
 function changeScale() {
-  // Handle the change in scale selection here
   let selectedScale = scalesDropdown.value();
   if (selectedScale !== 'disabled') {
-    // Process selected scale
-    if (selectedScale === 'Major Pentatonic') {// pentatonic
+    if (selectedScale === 'Major Pentatonic') {
       scaleMappings = majorPentatonic;
     } 
-    if (selectedScale === 'Minor Pentatonic') {// pentatonic
+    if (selectedScale === 'Minor Pentatonic') {
       scaleMappings = minorPentatonic;
     }     
     if (selectedScale === 'Major scale') {
@@ -928,15 +808,11 @@ function changeScale() {
 }
 
 function changeInstrument() {
-  // Initialise new sample set here
   let selectedInstrument = instrumentDropdown.value();
-  if (selectedInstrument !== 'disabled') {
-    // Process selected scale
-    
+  if (selectedInstrument !== 'disabled') {    
     if (selectedInstrument === 'organ') {
       individualInstrumentArray = new Array(37).fill(1);
     }    
-    
     if (selectedInstrument === 'cello') {
       individualInstrumentArray = new Array(37).fill(2);
     }
@@ -944,32 +820,19 @@ function changeInstrument() {
       individualInstrumentArray = new Array(37).fill(3);
     }
     console.log('Selected instrument:', selectedInstrument);
-    
     loadAudioSet(individualInstrumentArray);
     gridChanged = true;
   }
 }
 
 function updateIndividualInstrumentArray(indexToUpdate) {
-  // Clear previous debounce timer
   clearTimeout(debounceTimerArray);
-
-  // Set a new debounce timer
   debounceTimerArray = setTimeout(() => {
-    // Ensure indexToUpdate is within valid range
     if (indexToUpdate >= 0 && indexToUpdate < individualInstrumentArray.length) {
-      
-      // map the value according to scale dictionary
       indexToUpdate = scaleMappings[indexToUpdate];
-      
-      
-      // Update the value at the specified indexToUpdate
-      // Increment the value and constrain it to 1, 2, or 3
       individualInstrumentArray[indexToUpdate] = (individualInstrumentArray[indexToUpdate] % 3) + 1;
-      
-      // Reload audio set with updated individualInstrumentArray
       loadAudioSet(individualInstrumentArray);
       gridChanged = true;
     }
-  }, 50); // Adjust debounce delay as needed (e.g., 50 milliseconds)
+  }, 50); // debounce
 }
