@@ -457,7 +457,7 @@ function setup() {
 
   stopButton = createImg('images/stop_icon.jpg', '▶');
   stopButton.size(45, 45); 
-  stopButton.position(10, 20);
+  stopButton.position(10, 30);
   stopButton.touchStarted(stopAnimation).hide();
 
   clearButton = createImg('images/bin_icon.jpg', '✖');
