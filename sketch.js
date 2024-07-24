@@ -1,4 +1,5 @@
 p5.disableFriendlyErrors = true;
+let lastState = '';
 let debounceTimer;
 let debounceTimerArray; 
 let buttonSize = 20;
@@ -13,7 +14,6 @@ let loadedInstrumentSetBuffers = {};
 let individualInstrumentArray = new Array(37).fill(1);
 let initialBPM_value;
 let addButton, removeButton;
-let handcrankButton, handcrankOffButton;
 let speedSliderPosition;
 let speedSliderWidth;
 let isPlaying;
@@ -25,12 +25,13 @@ let rectHeight;
 let cellWidth;
 let cellHeight;
 let mainRectPadding;  
-let crankEnabled = false;
 let checkbox;
 let prevSliderValue = 0;
 
+let randomButton;
+
 let rows = 6;
-const cols = 16;
+const cols = 32;
 
 let grid = [];
 let gridChanged = true; 
@@ -94,9 +95,13 @@ BufferLoader.prototype.load = function() {
   }
 };
 
+
 function preload() {
   audioContext = new (window.AudioContext || window.webkitAudioContext)();
   loadAudioSet(individualInstrumentArray);
+  audioContext.suspend().then(() => {
+    console.log('AudioContext state in preload:', audioContext.state);
+  });  
 }
 
 function loadAudioSet(individualInstrumentArray) {
@@ -368,17 +373,39 @@ let dragging = false;
 let initialRow = -1;
 let initialCol = -1;
 
+let lastTouch = null;
+let touchMovedFlag = false;
+
 function touchStarted() {
-  gridChanged = true;
-  if (getAudioContext().state !== 'running') {
-    getAudioContext().resume();
-  }      
-  if (!animate && touches.length > 0) {
-    let touchX = touches[0].x;
-    let touchY = touches[0].y;    
+  if (audioContext.state !== 'running') {
+    userStartAudio().then(() => {
+      audioContext.resume().then(() => {
+        console.log('AudioContext resumed on mousePressed:', audioContext.state);
+      }).catch((err) => {
+        console.error('Error resuming AudioContext:', err);
+      });
+    }).catch((err) => {
+      console.error('Error starting user audio:', err);
+    });
+  }  
+  
+  lastTouch = touches[0]; // Store the last touch information
+  touchMovedFlag = false; // Reset the flag
+  return true; // Prevent any default behavior on touch start
+}
+
+function touchEnded() {
+  if (!touchMovedFlag && lastTouch) {
+    gridChanged = true;
+    if (getAudioContext().state !== 'running') {
+      getAudioContext().resume();
+    }
+    
+    let touchX = lastTouch.x;
+    let touchY = lastTouch.y;
     let adjustedtouchX = touchX - rectX;
-    let adjustedtouchY = touchY - rectY;       
-    let touch = touches[0];
+    let adjustedtouchY = touchY - rectY;
+    let touch = lastTouch;
     let buttonClicked = false;
     for (let btn of ellipseButtons) {
       let d = dist(adjustedtouchX, adjustedtouchY, btn.x, btn.y);
@@ -387,7 +414,7 @@ function touchStarted() {
         buttonClicked = true;
         gridChanged = true;
       }
-    }          
+    }
     if (touch.x > rectX && touch.x < rectX + rectWidth && touch.y > rectY && touch.y < rectY + rectHeight) {
       let col = floor((touch.x - rectX) / cellWidth);
       let row = rows - 1 - floor((touch.y - rectY) / (cellHeight + 5));
@@ -400,39 +427,33 @@ function touchStarted() {
         dragging = true;
       }
     }
+    
+    gridChanged = true;
   }
-  gridChanged = true;
-  return true;
-}
-
-function touchEnded() {
-  dragging = false;
-  initialRow = -1;
-  initialCol = -1;
-  gridChanged = true;
+  
+  lastTouch = null; // Clear the stored touch information
   return true;
 }
 
 function touchMoved() {
-  if (dragging && !animate && touches.length > 0) {
-    let touch = touches[0];
-    if (touch.x > rectX && touch.x < rectX + rectWidth && touch.y > rectY && touch.y < rectY + rectHeight) {
-      let col = floor((touch.x - rectX) / cellWidth);
-      let row = rows - 1 - floor((touch.y - rectY) / (cellHeight + 5));
-      fillCells(initialRow, initialCol, col);
-      gridChanged = true;
-    }
-  }
-  return true;
+  lastTouch = touches[0]; // Update the last touch information
+  touchMovedFlag = true; // Set the flag to true indicating touch moved
+  return true; // Prevent any default behavior on touch move
 }
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  // Suspend the AudioContext
+  audioContext.suspend().then(() => {
+    console.log('AudioContext suspended in setup:', audioContext.state);
+  }).catch((err) => {
+    console.error('Error suspending AudioContext:', err);
+  });  
+  createCanvas(windowWidth * 2, windowHeight);
   window.addEventListener('resize', resizeCanvasToWindow);
   frameRate(60);  
   rectX = 50;
   rectY = 100;
-  rectWidth = windowWidth * 0.8;
+  rectWidth = windowWidth * 1.8;
   rectHeight = windowHeight * 0.7;
   
   isPlaying = Array(rows).fill(false);
@@ -452,22 +473,27 @@ function setup() {
   initializeGridArray();
   playButton = createImg('images/play_icon.jpg', '▶');
   playButton.size(45, 45); 
-  playButton.position(10, 30);
+  playButton.position(10, 10);
   playButton.touchStarted(() => toggleAnimation(totalAnimationTime));
 
   stopButton = createImg('images/stop_icon.jpg', '▶');
   stopButton.size(45, 45); 
-  stopButton.position(10, 30);
+  stopButton.position(10, 10);
   stopButton.touchStarted(stopAnimation).hide();
 
   clearButton = createImg('images/bin_icon.jpg', '✖');
   clearButton.size(45, 45);
   clearButton.touchStarted(clearGrid);
-  clearButton.position(windowWidth - 50, 30);  
+  clearButton.position(windowWidth - 50, 10);  
   
   metroImage = createImg('images/metro_icon.jpg', 'tempo');
   metroImage.size(45, 45);
-  metroImage.position(65, 30);  
+  metroImage.position(65, 10);  
+  
+  randomButton = createImg("images/random_button.jpg", "R")
+  randomButton.size(45, 45);
+  randomButton.touchStarted(randomiseEverything);
+  positionrandomButton();      
   
   scalesDropdown = createSelect();
   scalesDropdown.option('Select a Scale:', '');
@@ -495,7 +521,7 @@ function setup() {
 
   let sliderWrapper = select('.slider-wrapper');
   speedSlider = createSlider(40, 240, 100, 1);
-  speedSlider.position(65 + metroImage.width, 40);
+  speedSlider.position(65 + metroImage.width, 20);
   speedSliderPosition = 65 + metroImage.width;
   speedSlider.parent(sliderWrapper);
   speedSlider.style('width', '60px');
@@ -508,7 +534,7 @@ function setup() {
   updateSpeed();
   addButton = createImg('images/add_row.jpg', '+');
   addButton.size(45, 45);
-  addButton.position(windowWidth - 55 - addButton.width, 30);
+  addButton.position(windowWidth - 55 - addButton.width, 10);
 
   addButton.touchStarted(() => {
     if (rows < 15) {
@@ -520,7 +546,7 @@ function setup() {
 
   removeButton = createImg('images/minus_row.jpg', '-');
   removeButton.size(45, 45);
-  removeButton.position(windowWidth - 60 - removeButton.width - addButton.width, 30);
+  removeButton.position(windowWidth - 60 - removeButton.width - addButton.width, 10);
 
   removeButton.touchStarted(() => {
     if (rows > 5) {
@@ -566,7 +592,8 @@ function deleteCells(row, col) {
   }
 }
 
-function draw() {
+function draw() { 
+  
   if (gridChanged || animate || speedSlider.value() !== prevSliderValue) {
     clear();
     background(250);
@@ -613,7 +640,7 @@ function draw() {
     // BPM
     noStroke();
     fill(0);
-    text("♩ = " + speedSlider.value(), speedSliderPosition + speedSliderWidth * 1.2, 32);
+    text("♩ = " + speedSlider.value(), speedSliderPosition + speedSliderWidth * 1.2, 13);
 
     if (animate) {
       let elapsedTime = millis() - animationStartTime;
@@ -624,10 +651,6 @@ function draw() {
       playColumnSounds(currentCol);
 
       if (currentCol >= cols) stopAnimation();
-      
-      if (crankEnabled) {
-        updateSpeedWithSineWave();
-      }
     }
   }
   prevSliderValue = speedSlider.value();
@@ -660,6 +683,7 @@ function updateSpeed() {
 function toggleAnimation() {
   animate = !animate;
   if (animate) {
+    randomButton.attribute('src', 'images/random_button_disabled.jpg');
     playButton.hide();
     stopButton.show();
     pixelsPerMillisecond = (rectX + rectWidth + mainRectPadding) / totalAnimationTime;
@@ -673,6 +697,7 @@ function toggleAnimation() {
 function stopAnimation() {
   animate = false;
   stopButton.hide();
+  randomButton.attribute('src', 'images/random_button.jpg');
   playButton.show();
   rectX = 50;
   isPlaying.fill(false);
@@ -730,7 +755,7 @@ function stopSoundWithFadeOut(activeSource) {
 }
 
 function resizeCanvasToWindow() {
-  resizeCanvas(windowWidth, windowHeight);
+  resizeCanvas(windowWidth * 2, windowHeight);
   redraw();
 }
 
@@ -746,29 +771,6 @@ function initializeGridArray() {
   isPlaying = Array(rows).fill(false);
   activeSources = Array(rows).fill(null);
   gridChanged = true;
-}
-
-function enableCrank() {
-  crankEnabled=true;
-}
-
-function disableCrank() {
-  crankEnabled=false;
-}
-
-function toggleCrank() {
-  crankEnabled = !crankEnabled;
-
-  if (crankEnabled) {
-    // Hand crank is enabled
-    handcrankButton.hide();
-    handcrankOffButton.show();
-    enableCrank();
-  } else {
-    handcrankButton.show();
-    handcrankOffButton.hide();
-    disableCrank();
-  }
 }
 
 function changeScale() {
@@ -835,4 +837,82 @@ function updateIndividualInstrumentArray(indexToUpdate) {
       gridChanged = true;
     }
   }, 50); // debounce
+}
+
+
+function positionrandomButton() {
+  randomButton.position(windowWidth - 50, 60);
+}
+
+function randomiseEverything() {
+  if (!animate) {  
+    randomTempo = randomInt(60, 240); // int, avoid slowest option
+    speedSlider.value(randomTempo);
+
+    // rows
+    rows = int(random(10)) + 5;
+
+    randomScale = random(["Major Pentatonic", "Minor Pentatonic", "Major scale", "Dorian mode", "Mixolydian mode", "Aeolian mode", "Chromatic", "Harmonic Minor", "Whole Tone", "Octatonic"]);
+    scalesDropdown.selected(randomScale);
+    changeScale();  
+
+    initializeGridArray();
+    createRandomPoints();
+
+    // individ. instruments
+    individualInstrumentArray = [];
+    for (let i = 0; i < 37; i++) {
+    individualInstrumentArray.push(randomInt(1, 3));
+  }
+    loadAudioSet(individualInstrumentArray);    
+    gridChanged = true;  
+
+  }
+}
+
+function randomInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+let sequence = []; // Array to store the sequence
+let maxDifference = 2;
+
+// create random single line melody - marginal improvement on completely random notes
+function createRandomPoints() {
+  
+  grid = [];
+  sequence = [];
+  
+  for (let i = 0; i < rows; i++) {
+    grid.push(new Array(cols).fill(false));
+  }
+  
+  let firstNumber = floor(random(1, rows)); // or rows + 1 ?
+  sequence.push(firstNumber);
+  
+  // Generate the rest of the sequence
+  for (let i = 1; i < cols; i++) {
+    let prevNumber = sequence[i - 1];
+    
+    // Calculate the next number within the allowable range
+    let nextNumber = prevNumber + floor(random(-maxDifference, maxDifference + 1));
+    
+    // Ensure the next number stays within the defined range
+    nextNumber = constrain(nextNumber, 1, rows-1);
+    
+    // Add the number to the sequence
+    sequence.push(nextNumber);
+  }  
+  
+  // Set values in the grid based on the sequence
+  for (let i = 0; i < cols; i++) {
+    // Introduce a probability to skip setting the value in the grid
+    if (random(1) < 0.1) {
+      continue; // Skip setting this item in the grid
+    }
+
+    let col = sequence[i];
+    let row = i;
+    grid[col][row] = true;
+  }
 }
